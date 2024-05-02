@@ -6,13 +6,19 @@
 function combine {
     echo "Roll_Number,Name" > main.csv
 
+    
     # Finding all the unique student and copying it to main.csv
     for file in *.csv; do
+         # If files is rank.csv, stats.csv then skip
+        if [ "$files" == "rank.csv" ] || [ "$files" == "stats.csv" ]; then
+            continue
+        fi
+
         while IFS=, read -r roll_number name mark; do
 
             # checking if the following roll_number already exist or not in main.csv
             # if not exist then appen the same 
-            if ! grep -q "^$roll_number,$name$" main.csv; then
+            if ! grep -q -E "^$roll_number,$name$" main.csv; then
                 echo "$roll_number,$name" >> main.csv
             fi
         done < <(awk 'NR > 1'  $file)
@@ -22,8 +28,8 @@ function combine {
     #Iterating over every csv file and find that roll_number marks
     for files in *.csv; do
 
-        # If files is main.csv then skip
-        if [ "$files" == "main.csv" ]; then
+        # If files is main.csv, rank.csv, stats.csvthen skip
+        if [ "$files" == "main.csv" ] || [ "$files" == "rank.csv" ] || [ "$files" == "stats.csv" ]; then
             continue
         fi
 
@@ -41,11 +47,11 @@ function combine {
             if grep -q "^$roll_number" $files; then
                 lin=$(grep -E "^$roll_number.*$" $files | cut -d "," -f3)
                 old_pattern=$(grep -E "^$roll_number.*$" main.csv)
-                sed -i "s/$old_pattern/$old_pattern,$lin/g" main.csv
+                awk -v old="$old_pattern" -v mark="$lin" 'BEGIN {FS=OFS=","} $0 ~ old {gsub(old, old "," mark)} 1' main.csv > temp && mv temp main.csv
             # If not present then append 'a'
             else
                 old_pattern=$(grep -E "^$roll_number.*$" main.csv)
-                sed -i "s/$old_pattern/$old_pattern,a/g" main.csv
+                awk -v old="$old_pattern" 'BEGIN {FS=OFS=","} {gsub(/\r/, "")} $0 ~ old {gsub(old, old ",a")} 1' main.csv > temp && mv temp main.csv
             fi
         done < <(awk 'NR > 1'  main.csv)
     done
@@ -54,9 +60,9 @@ function combine {
 
 # upload function for main.csv
 function upload {
-    # copy file from given directory to script directory
+    # Get the directory path from the function argument
+    # Path to extract wildcard pattern from (provided as command line argument)
     cp "$1" ./
-
 }
 
 # total function for main.csv
@@ -171,4 +177,30 @@ function calculate_std_dev {
         }
     }
     END {print sqrt(sum/count)}' main.csv
+}
+
+function stats {
+    # Check if main.csv file exists
+    if [ ! -f "main.csv" ]; then
+        echo "main.csv is not present"
+        exit 1
+    fi
+    # Extract exam columns (excluding Total)
+    exams=$(head -n1 main.csv | sed 's/Roll_Number,Name,//;s/Total//;s/,,/,/g')
+
+    # Create header for stats.csv
+    echo "Exam,Mean,Median,Standard Deviation" > stats.csv
+
+    # Process each exam column
+    IFS=',' read -ra columns <<< "$exams"
+    for exam in "${columns[@]}"; do
+        # Get the column number for the exam
+        col_num=$(awk -F, -v exam="$exam" 'NR==1 {for (i=3; i<=NF; i++) {if ($i == exam) {print i; exit}}}' main.csv)
+        # Calculate mean, median, and standard deviation for the exam column
+        mean=$(calculate_mean $col_num)
+        median=$(calculate_median $col_num)
+        std_dev=$(calculate_std_dev $col_num)
+        # Append exam statistics to stats.csv
+        echo "$exam,$mean,$median,$std_dev" >> stats.csv
+    done
 }

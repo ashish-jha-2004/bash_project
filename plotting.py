@@ -48,6 +48,26 @@ plt.title(f'Marks for Student {roll_number} vs Highest Marks')
 plt.legend()
 plt.show()
 
+    #  num_exams = len(exam_marks): This line calculates the number of exams, which is the length of the exam_marks list. Each element in this list represents the marks obtained by a student in a particular exam.
+
+    # x = np.arange(num_exams): This line creates an array x containing values from 0 to num_exams - 1. These values will be used as the x-coordinates for the bars in the bar graph.
+
+    # bar_width = 0.35: This line sets the width of each bar in the bar graph.
+
+    # plt.bar(x, exam_marks, width=bar_width, label='Student Marks'): This line creates a bar graph for the student's marks. It uses the bar function from Matplotlib, specifying the x-coordinates (x), the y-coordinates (student marks), the bar width, and a label for the legend.
+
+    # plt.bar(x + bar_width, highest_marks, width=bar_width, label='Highest Marks'): This line creates a second set of bars for the highest marks. It uses the same bar function but shifts the x-coordinates to the right by bar_width so that these bars are displayed beside the student marks bars.
+
+    # plt.xticks(x + bar_width / 2, labels): This line sets the x-axis tick labels to the exam labels (labels). It positions the ticks at the center of each pair of bars by adding bar_width / 2 to the x-coordinates.
+
+    # plt.ylabel('Marks'): This line sets the label for the y-axis.
+
+    # plt.title(f'Marks for Student {roll_number} vs Highest Marks'): This line sets the title of the plot, including the student's roll number.
+
+    # plt.legend(): This line displays the legend, which shows the labels ('Student Marks' and 'Highest Marks') associated with each set of bars.
+
+    # plt.show(): This line displays the plot.
+
 
 # Read data from stats.csv
 with open('stats.csv', mode='r') as file:
